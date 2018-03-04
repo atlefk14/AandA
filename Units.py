@@ -2,6 +2,7 @@ class Unit():
     def __init__(self, success=1):
         self.success = success
         self.position = None
+        self.usedSteps = 0
 
     def actionIsSuccessful(self, x):
         if x >= self.success:
@@ -20,6 +21,12 @@ class Unit():
         except:
             return False
 
+    def setStep(self, increment):
+
+        self.usedSteps+=increment
+
+    def reset(self):
+        self.usedSteps = 0
 
 class Infantry(Unit):
     def __init__(self, owner, success=2):

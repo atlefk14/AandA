@@ -9,7 +9,7 @@ class Tile(object):
 
         self.cords = cords
 
-        self.units = dict()
+        self.units = []#dict()
 
         self.constructions = []
 
@@ -18,7 +18,7 @@ class Tile(object):
         self.value = 2
 
     def __repr__(self):
-        return self.owner
+        return self.owner+self.units.__str__()+self.constructions.__str__()
 
 class MapClass(object):
     def __init__(self, size, nations):
