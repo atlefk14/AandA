@@ -34,8 +34,12 @@ class Infantry(Unit):
         self.range = 1
         self.owner = owner
         self.success = success
+        self.type = 'Inf'
         #self.setPosition(position)
+
         self.cost = 2
+    def __repr__(self):
+        return self.owner+"_"+self.type
 
 class Tank(Unit):
     def __init__(self, owner, success=3):

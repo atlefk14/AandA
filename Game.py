@@ -107,8 +107,6 @@ class Game(object):
         c = 0
         for i in fromTile.units:
             if c == n:
-                print(fromTile.units)
-                print(toTile.units)
                 break
             c += 1
             if isinstance(i, type):
@@ -116,20 +114,34 @@ class Game(object):
                 deltaY = abs(fromTile.cords[1] - toTile.cords[1])
                 ##Add is legal function instead.
                 if deltaX + deltaY <= i.range:
-                    print("Kan flætte")
                     i.setStep(deltaY+deltaX)
                     toTile.units.append(i)
                     fromTile.units.remove(i)
                 # if fromTile.neighbours.__contains__(toTile):
 
     def findPossibleBattles(self):
-        battlePositions = []
+        battlePositions = set()
+        for w in self.map.board:
+            for h in w:
+                for unit in h.units:
+                    if not h.owner == self.currentPlayer and unit.owner == self.currentPlayer:
+                        battlePositions.add(h.cords)
+                        print(h)
+        return battlePositions
 
-
-
-        return deployablePlaces
-
-
+    def doBattle(self, cords):
+        enemies = dict()
+        friendlies = dict()
+        for unit in self.map.board[cords[0]][cords[1]]:
+            if unit.owner == self.currentPlayer:
+                if unit.type not in friendlies:
+                    friendlies[unit.type] = 0
+                friendlies[unit.type] += 1
+            else:
+                if unit.type not in enemies:
+                    enemies[unit.type] = 0
+                enemies[unit.type] += 1
+        
 
 game = Game((6, 6), [('Germany', 2), ('Russia', 2)])
 game.startingConditions(2)
@@ -146,5 +158,8 @@ game.conquerTile(game.map.board[4][3], game.currentPlayer)
 # print(game.map.board)
 # print(game.map.board[0][3])
 game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
+game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
+
+print(game.findPossibleBattles())
 
 # print(game.borderTiles)
