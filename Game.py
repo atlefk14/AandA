@@ -1,6 +1,7 @@
 import MapGenerator as mapGen
 import Units
 import Buildings
+import random as r
 
 
 class Game(object):
@@ -8,15 +9,18 @@ class Game(object):
         self.map = mapGen.MapClass(size, nations)
         self.nations = nations
         self.startPlayer = nations[0][0]
+        self.units = dict()
         self.currentPlayer = self.startPlayer
         self.terminal = False
         self.turn = 0
         self.phase = 0
         self.purchases = dict()
         self.PCUs = None  # self.calculatePCUs()
-        self.deployablePlaces = None  # self.findDeployablePlaces()
+        self.deployablePlaces = None
         self.borderTiles = self.calulateBorder()
-        self.myUnits = []
+        self.startingConditions(n=2)
+        self.battles = []
+
 
     def calulateBorder(self):
         borderTiles = []
@@ -33,11 +37,11 @@ class Game(object):
     def startingConditions(self, n):
         for tile in self.borderTiles:
             for i in range(n):
-                '''if 'inf' not in tile.units:
-                    tile.units['inf'] = []
-                tile.units['inf'].append(Units.Infantry(owner=tile.owner))
-                '''
-                tile.units.append(Units.Infantry(owner=tile.owner))
+                infUnit = Units.Infantry(owner=tile.owner)
+                tile.units.append(infUnit)
+                if tile.owner not in self.units:
+                    self.units[tile.owner] = []
+                self.units[tile.owner].append(infUnit)
 
     def rotate(self, n=1):
         return self.nations[n:] + self.nations[:n]
@@ -53,14 +57,8 @@ class Game(object):
         return deployablePlaces
 
     def findMyUnits(self):
-        unitList = []
-        for w in self.map.board:
-            for h in w:
-                if h.owner == self.currentPlayer:
-                    unitList+=h.units
-        self.myUnits = unitList
 
-        return self.myUnits
+        return self.units[self.currentPlayer]
 
     def calculatePCUs(self):
         PCUs = 0
@@ -96,6 +94,7 @@ class Game(object):
     def initTurn(self):
         self.deployablePlaces = self.calculatePCUs()
         self.PCUs = self.calculatePCUs()
+        self.battles = []
 
     def conquerTile(self, tile, newOwner):
         try:
@@ -114,10 +113,12 @@ class Game(object):
                 deltaY = abs(fromTile.cords[1] - toTile.cords[1])
                 ##Add is legal function instead.
                 if deltaX + deltaY <= i.range:
-                    i.setStep(deltaY+deltaX)
+                    if fromTile.owner !=toTile.owner:
+                        if not self.battles.__contains__(toTile.cords):
+                            self.battles.append(toTile.cords)
+                    i.setStep(deltaY + deltaX)
                     toTile.units.append(i)
                     fromTile.units.remove(i)
-                # if fromTile.neighbours.__contains__(toTile):
 
     def findPossibleBattles(self):
         battlePositions = set()
@@ -126,40 +127,96 @@ class Game(object):
                 for unit in h.units:
                     if not h.owner == self.currentPlayer and unit.owner == self.currentPlayer:
                         battlePositions.add(h.cords)
-                        print(h)
-        return battlePositions
+        return list(battlePositions)
 
-    def doBattle(self, cords):
-        enemies = dict()
-        friendlies = dict()
-        for unit in self.map.board[cords[0]][cords[1]]:
-            if unit.owner == self.currentPlayer:
-                if unit.type not in friendlies:
-                    friendlies[unit.type] = 0
-                friendlies[unit.type] += 1
+    def getDice(self, n=6):
+        return r.randint(1, n)
+
+    def doBattle(self, cords, attacking = dict(), defending = dict()):
+        for unit in self.map.board[cords[0]][cords[1]].units:
+            if unit.owner == self.currentPlayer and self.map.board[cords[0]][cords[1]].owner != self.currentPlayer:
+                if unit.type not in attacking:
+                    attacking[unit.type] = []
+                unit.setPosition(cords)
+                attacking[unit.type].append(unit)
             else:
-                if unit.type not in enemies:
-                    enemies[unit.type] = 0
-                enemies[unit.type] += 1
-        
+                if unit.type not in defending:
+                    defending[unit.type] = []
+                unit.setPosition(cords)
+                defending[unit.type].append(unit)
+        aHits = 0
+        for key in attacking:
+            for unit in attacking[key]:
+                dice = self.getDice()
+                print(unit)
+                if dice <= unit.attSuccess:
+                    aHits += 1
+        dHits = 0
+        for key in defending:
+            for unit in defending[key]:
+                dice = self.getDice()
+                if dice <= unit.defSuccess:
+                    dHits += 1
+
+        return (attacking, dHits), (defending, aHits)
+
+    def deleteUnit(self, units):
+        for unit in units:
+            self.units[unit.owner].remove(unit)
+            cords = unit.getPosition()
+            self.map.board[cords[0]][cords[1]].units.remove(unit)
+        return True
+
+    def takeCasualties(self, units, choice, n):
+        toBeDeleted = []
+        c=0
+        for unit in units[choice]:
+            if c == n:
+                break
+            toBeDeleted.append(unit)
+            c+=1
+        return toBeDeleted
+
+    def newOwner(self, cords):
+        isNewOwner = True
+        newOwner = ""
+        for unit in self.map.board[cords[0]][cords[1]].units:
+            if unit.owner == self.map.board[cords[0]][cords[1]].owner:
+                isNewOwner = False
+            else:
+                newOwner = unit.owner
+
+        if isNewOwner == True:
+            self.conquerTile(self.map.board[cords[0]][cords[1]], newOwner)
+
+
 
 game = Game((6, 6), [('Germany', 2), ('Russia', 2)])
-game.startingConditions(2)
 game.nextTurn()
 game.initTurn()
 game.nextTurn()
 game.initTurn()
 print(game.findMyUnits().__len__())
-
-game.calulateBorder()
 # print(game.map.board)
-game.conquerTile(game.map.board[4][3], game.currentPlayer)
+#game.conquerTile(game.map.board[4][3], game.currentPlayer)
 # print(game.map.board[3][4])
 # print(game.map.board)
 # print(game.map.board[0][3])
 game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
 game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
-
-print(game.findPossibleBattles())
-
-# print(game.borderTiles)
+#game.moveUnit(game.map.board[0][3], game.map.board[0][2], 1, Units.Infantry)
+print(game.map.board[0][3])
+print(game.battles[0])
+results = game.doBattle(game.battles[0])
+print(results)
+attacker = results[0]
+defender = results[1]
+attacker = game.takeCasualties(attacker[0], choice='Inf', n=attacker[1])
+print(attacker)
+defender = game.takeCasualties(defender[0], choice='Inf', n=defender[1])
+print(defender)
+game.deleteUnit(defender)
+game.deleteUnit(attacker)
+print(game.map.board[0][3])
+game.newOwner(game.battles[0])
+print(game.map.board[0][3])

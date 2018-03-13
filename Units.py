@@ -23,29 +23,36 @@ class Unit():
 
     def setStep(self, increment):
 
-        self.usedSteps+=increment
+        self.usedSteps += increment
 
     def reset(self):
         self.usedSteps = 0
+
 
 class Infantry(Unit):
     def __init__(self, owner, success=2):
         super().__init__()
         self.range = 1
         self.owner = owner
-        self.success = success
         self.type = 'Inf'
-        #self.setPosition(position)
+        # self.setPosition(position)
+        self.attSuccess = success-1
+        self.defSuccess = success
+        self.attachment = []
 
         self.cost = 2
+
+
     def __repr__(self):
-        return self.owner+"_"+self.type
+        return self.owner + "_" + self.type
+
 
 class Tank(Unit):
     def __init__(self, owner, success=3):
         super().__init__()
         self.range = 2
         self.owner = owner
-        self.success = success
-        #self.setPosition(position)
+        self.attSuccess = success
+        self.defSuccess = success
+        # self.setPosition(position)
         self.cost = 5
