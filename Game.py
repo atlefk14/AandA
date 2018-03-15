@@ -20,7 +20,7 @@ class Game(object):
         self.borderTiles = self.calulateBorder()
         self.startingConditions(n=2)
         self.battles = []
-
+        self.moveable = self.moveableUnits()
 
     def calulateBorder(self):
         borderTiles = []
@@ -76,12 +76,19 @@ class Game(object):
         self.phase = 0
         return
 
+    def getTurn(self):
+        return self.turn
+
     def nextPhase(self):
         if self.phase == 4:
             self.nextTurn()
         self.phase += 1
 
         return
+
+    def getPhase(self):
+
+        return self.phase
 
     def recruitUnit(self, n, type):
         if type == 1:
@@ -104,21 +111,22 @@ class Game(object):
 
     def moveUnit(self, fromTile, toTile, n, type):
         c = 0
-        for i in fromTile.units:
+        for unit in fromTile.units:
             if c == n:
                 break
             c += 1
-            if isinstance(i, type):
+            if isinstance(unit, type):
                 deltaX = abs(fromTile.cords[0] - toTile.cords[0])
                 deltaY = abs(fromTile.cords[1] - toTile.cords[1])
                 ##Add is legal function instead.
-                if deltaX + deltaY <= i.range:
+                if deltaX + deltaY <= unit.range:
+
                     if fromTile.owner !=toTile.owner:
                         if not self.battles.__contains__(toTile.cords):
                             self.battles.append(toTile.cords)
-                    i.setStep(deltaY + deltaX)
-                    toTile.units.append(i)
-                    fromTile.units.remove(i)
+                    unit.setStep(deltaY + deltaX)
+                    toTile.units.append(unit)
+                    fromTile.units.remove(unit)
 
     def findPossibleBattles(self):
         battlePositions = set()
@@ -167,6 +175,13 @@ class Game(object):
             self.map.board[cords[0]][cords[1]].units.remove(unit)
         return True
 
+    def moveableUnits(self):
+        moveable = []
+        for unit in self.units[self.currentPlayer]:
+            if unit.usedSteps != unit.range:
+                moveable.append(unit)
+        self.moveable = moveable
+
     def takeCasualties(self, units, choice, n):
         toBeDeleted = []
         c=0
@@ -191,7 +206,7 @@ class Game(object):
 
 
 
-game = Game((6, 6), [('Germany', 2), ('Russia', 2)])
+game = Game((2, 2), [('Germany', 2), ('Russia', 2)])
 game.nextTurn()
 game.initTurn()
 game.nextTurn()
@@ -202,10 +217,12 @@ print(game.findMyUnits().__len__())
 # print(game.map.board[3][4])
 # print(game.map.board)
 # print(game.map.board[0][3])
-game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
-game.moveUnit(game.map.board[0][2], game.map.board[0][3], 1, Units.Infantry)
+game.moveableUnits()
+print(game.moveable)
+game.moveUnit(game.map.board[0][0], game.map.board[0][1], 2, Units.Infantry)
+#game.moveUnit(game.map.board[0][0], game.map.board[0][1], 1, Units.Infantry)
 #game.moveUnit(game.map.board[0][3], game.map.board[0][2], 1, Units.Infantry)
-print(game.map.board[0][3])
+print(game.map.board[0][1])
 print(game.battles[0])
 results = game.doBattle(game.battles[0])
 print(results)
@@ -217,6 +234,8 @@ defender = game.takeCasualties(defender[0], choice='Inf', n=defender[1])
 print(defender)
 game.deleteUnit(defender)
 game.deleteUnit(attacker)
-print(game.map.board[0][3])
+print(game.map.board[0][1])
 game.newOwner(game.battles[0])
-print(game.map.board[0][3])
+print(game.map.board[0][1])
+game.moveableUnits()
+print(game.moveable)
