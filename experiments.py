@@ -1,1 +1,4 @@
-a = [1, 2, 3, 4]
+a = dict()
+a['a'] = 1
+a['b'] = 2
+print(list(a.keys()))

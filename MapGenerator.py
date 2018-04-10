@@ -5,7 +5,7 @@ class Tile(object):
     def __init__(self, cords, name='nameless', water=False):
         self.owner = None
 
-        self.neighbours = set()
+        self.neighbours = []
 
         self.cords = cords
 
@@ -52,13 +52,13 @@ class MapClass(object):
             for w in range(self.size[1]):
                 #Edge detection
                 if h+1 < self.size[0]:
-                    board[h][w].neighbours.add(board[h+1][w])
+                    board[h][w].neighbours.append(board[h+1][w])
                 if h-1 >= 0:
-                    board[h][w].neighbours.add(board[h-1][w])
+                    board[h][w].neighbours.append(board[h-1][w])
                 if w+1 < self.size[1]:
-                    board[h][w].neighbours.add(board[h][w+1])
+                    board[h][w].neighbours.append(board[h][w+1])
                 if w-1 >= 0:
-                    board[h][w].neighbours.add(board[h][w-1])
+                    board[h][w].neighbours.append(board[h][w-1])
                 '''
                 print("h: "+str(h), w)
                 for k in board[h][w].neighbours:
