@@ -4,11 +4,11 @@ import Buildings
 import random as r
 
 
-class Game(object):
+class Game():
     def __init__(self, size, nations):
         self.map = mapGen.MapClass(size, nations)
         self.nations = nations
-        self.startPlayer = nations[0][0]
+        self.startPlayer = nations[0]
         self.units = dict()
         self.currentPlayer = self.startPlayer
         self.terminal = False
@@ -70,7 +70,7 @@ class Game(object):
 
     def nextTurn(self):
         self.nations = self.rotate()
-        self.currentPlayer = self.nations[0][0]
+        self.currentPlayer = self.nations[0]
         if self.currentPlayer == self.startPlayer:
             self.turn += 1
         self.phase = 0
@@ -80,10 +80,9 @@ class Game(object):
         return self.turn
 
     def nextPhase(self):
+        self.phase += 1
         if self.phase == 4:
             self.nextTurn()
-        self.phase += 1
-
         return
 
     def getPhase(self):
@@ -111,9 +110,11 @@ class Game(object):
 
     def moveUnit(self, fromTile, toTile, n, type):
         c = 0
-        for unit in fromTile.units:
-            if c == n:
+        d = 0
+        while True:
+            if d == n:
                 break
+            unit = fromTile.units[c]
             c += 1
             if isinstance(unit, type):
                 deltaX = abs(fromTile.cords[0] - toTile.cords[0])
@@ -127,7 +128,8 @@ class Game(object):
                     unit.setStep(deltaY + deltaX)
                     toTile.units.append(unit)
                     fromTile.units.remove(unit)
-
+                    d += 1
+                    c -= 1
     def findPossibleBattles(self):
         battlePositions = set()
         for w in self.map.board:
@@ -205,7 +207,7 @@ class Game(object):
             self.conquerTile(self.map.board[cords[0]][cords[1]], newOwner)
 
 
-
+'''
 game = Game((2, 2), [('Germany', 2), ('Russia', 2)])
 game.nextTurn()
 game.initTurn()
@@ -218,11 +220,14 @@ print(game.findMyUnits().__len__())
 # print(game.map.board)
 # print(game.map.board[0][3])
 game.moveableUnits()
+
 print(game.moveable)
-game.moveUnit(game.map.board[0][0], game.map.board[0][1], 2, Units.Infantry)
+#print(game.map.board[0][1])
+game.moveUnit(game.map.board[0][0], game.map.board[0][1], 2, Units.Infantry)   #Ser ikke forskjell når eg sende 1 og 2 units
 #game.moveUnit(game.map.board[0][0], game.map.board[0][1], 1, Units.Infantry)
 #game.moveUnit(game.map.board[0][3], game.map.board[0][2], 1, Units.Infantry)
-print(game.map.board[0][1])
+#print(game.map.board)
+
 print(game.battles[0])
 results = game.doBattle(game.battles[0])
 print(results)
@@ -239,3 +244,4 @@ game.newOwner(game.battles[0])
 print(game.map.board[0][1])
 game.moveableUnits()
 print(game.moveable)
+'''

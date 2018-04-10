@@ -44,7 +44,7 @@ class Infantry(Unit):
 
 
     def __repr__(self):
-        return self.owner + "_" + self.type
+        return self.owner.name + "_" + self.type
 
 
 class Tank(Unit):

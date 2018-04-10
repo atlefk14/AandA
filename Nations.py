@@ -5,3 +5,6 @@ class Nation():
         self.difficulty = None
         if not self.human:
             self.difficulty = difficulty
+
+    def __repr__(self):
+        return self.name
