@@ -26,7 +26,7 @@ class StateMachine():
                 game.currentPlayer = defender[0][defenderKeys[0]][0].owner
                 break
             '''
-
             game.randomBot()
+            game.currentPlayer = game.nations[0]
             print("Jeg er ikke mennesk")
 

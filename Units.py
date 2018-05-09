@@ -3,12 +3,21 @@ class Unit():
         self.success = success
         self.position = None
         self.usedSteps = 0
+        self.oldPosition = None
 
     def actionIsSuccessful(self, x):
         if x >= self.success:
             return True
         else:
             return False
+
+    def getOldPositon(self):
+
+        return self.oldPosition
+
+    def setOldPosition(self, pos):
+
+        self.oldPosition = pos
 
     def getPosition(self):
 

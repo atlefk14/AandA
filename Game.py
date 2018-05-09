@@ -20,8 +20,8 @@ class Game():
         self.startingConditions(n=2)
         self.battles = []
         self.moveable = self.moveableUnits()
-        self.recruitAbleList = [2, 5, 10]
-
+        self.recruitAbleList = [2]
+        self.history = []
     def calulateBorder(self):
         borderTiles = []
         for w in self.map.board:
@@ -81,9 +81,10 @@ class Game():
         return self.turn
 
     def nextPhase(self):
-        self.phase += 1
-        if self.phase == 4:
+        if self.phase == 5:
             self.nextTurn()
+        else:
+            self.phase += 1
         return
 
     def getPhase(self):
@@ -99,6 +100,8 @@ class Game():
         return rtr
 
     def recruitUnit(self, n):
+        if n != 0:
+            print(n)
         if n == 0:
             inf = Units.Infantry(self.currentPlayer)
         if not n.__str__() in self.purchases:
@@ -134,12 +137,18 @@ class Game():
                             self.battles.append(toTile.cords)
                     unit.setStep(deltaY + deltaX)
                     unit.setPosition(toTile.cords)
+                    unit.setOldPosition(fromTile.cords)
                     if unit.usedSteps == unit.range:
                         self.moveable.remove(unit)
                     toTile.units.append(unit)
                     fromTile.units.remove(unit)
                     d += 1
                     c -= 1
+
+    def resetDasUnits(self):
+        for unit in self.units[self.currentPlayer]:
+            unit.reset()
+
     def findPossibleBattles(self):
         battlePositions = set()
         for w in self.map.board:
@@ -152,7 +161,9 @@ class Game():
     def getDice(self, n=6):
         return r.randint(1, n)
 
-    def doBattle(self, cords, attacking=dict(), defending=dict()):
+    def doBattle(self, cords):
+        attacking = dict()
+        defending = dict()
         for unit in self.map.board[cords[0]][cords[1]].units:
             if unit.owner == self.currentPlayer and self.map.board[cords[0]][cords[1]].owner != self.currentPlayer:
                 if unit.type not in attacking:
@@ -164,6 +175,7 @@ class Game():
                     defending[unit.type] = []
                 unit.setPosition(cords)
                 defending[unit.type].append(unit)
+
         aHits = 0
         for key in attacking:
             for unit in attacking[key]:
@@ -240,12 +252,14 @@ class Game():
                 if pos.__len__() == 0:
                     self.nextPhase()
                     break
-                #print(pos)
                 choice = r.randint(0, len(pos)-1)
                 self.recruitUnit(choice)
                 used += pos[choice]
-                print(choice)
+                #print(self.PCUs)
+                #print(pos)
+                #print("Choice "+ str(choice))
         elif self.phase == 2:
+            self.battles = []
             while self.moveable.__len__() > 0:
                 if r.random() > 0.1:
                     unit = self.moveable[0]
@@ -254,33 +268,123 @@ class Game():
                     if toTile.owner != self.currentPlayer:
                         moved[toTile.cords.__str__()] = pos
                     self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__)
-                    print(toTile)
+                    #print(toTile)
                 else:
                     break
-            while self.battles.__len__() > 0:
-                results = self.doBattle(self.battles[0])
-                attacker = results[0]
-                defender = results[1]
-                retreat = 0.1
-                random = r.random()
-                if attacker[1] > 0:
-                    pos = list(attacker[0].keys())
-                    print(pos)
+            self.phase=2.5
+        elif self.phase == 2.5:
+                while self.battles.__len__() > 0:
+                    retreat = 1.0
+                    random = r.random()
+                    results = self.doBattle(self.battles[0])
+                    attacker = results[0]
+                    defender = results[1]
+                    if attacker[0].__len__() == 0 and attacker[1] != 0:
+                        print("Ka Fane")
+                        print(self.history)
+                    self.history.append((attacker, defender))
+                    lostAttack = False
 
-                if 0 < defender[1] < defender[0].__len__():
-                    defenderKeys = list(defender[0].keys())
-                    self.currentPlayer = defender[0][defenderKeys[0]][0].owner
-                    print(self.map.board)
-                    return defender
-                else:
-                    defenderDeleted = self.takeCasualties(defender[0], choice='Inf', n=defender[1])
-                    print(self.map.board)
-                    print(defender)
-                    self.deleteUnit(defenderDeleted)
-                if random < retreat:
-                    print("eg trekke meg vekk wææ")
-                    print(random)
-            self.nextPhase()
+                    if random < retreat and not defender[0].__len__() == 0:
+                        print("1")
+                        '''
+                        tobeDeleted = []
+                        oldPos = None
+                        for unit in self.map.board[self.battles[0][0], self.battles[0][1]].units:
+                            if unit.owner == self.currentPlayer:
+                                unit.setPosition(unit.oldPosition)
+                                unit.setOldPosition((self.battles[0]))
+                                newPos = unit.getPosition()
+                                tobeDeleted.append(unit)
+                                self.map.board[newPos[0], newPos[1]].units.append(unit)
+
+                        for unit in tobeDeleted:
+                            oldPos = unit.getOldPositon()
+                            self.map.board[oldPos[0], oldPos[1]].units.remove(unit)
+                        print("eg trekke meg vekk wææ")
+                        print(random)
+                        if self.battles.__len__() == 1:
+                            self.battles = []
+                            break
+                        else:
+                            self.battles.remove(self.battles[0])
+                            break
+                    '''
+
+                    '''
+                    If the hits on the attackers units is higher than zero, a unit must die.
+                    '''
+                    if attacker[1] > 0:
+                        print("2")
+                        pos = list(attacker[0].keys())
+                        #If the number of hits is higher than the number of possible 'death', this removes all possible units. This also automatically means that the battle is over.
+                        #TODO as of now this just supports INF
+                        if attacker[1] >= attacker[0]['Inf'].__len__():
+                            unit = attacker[0]['Inf'][0]
+                            pos = unit.getPosition()
+                            totalBefore = self.map.board[pos[0], pos[1]].units.__len__()
+                            print("3")
+                            attackerDeleted = self.takeCasualties(attacker[0], choice='Inf', n=attacker[0]['Inf'].__len__())
+                            self.deleteUnit(attackerDeleted)
+                            totalAfter = self.map.board[pos[0], pos[1]].units.__len__()
+                            if (totalBefore-totalAfter) == 0:
+                                print("Her er feilen for faen i helvete satan")
+                            lostAttack = True
+                            if self.battles.__len__() == 1:
+                                print("4")
+                                self.battles = []
+                            else:
+                                print("5")
+                                self.battles.remove(self.battles[0])
+                        #Else the number of hit units must die.
+                        else:
+                            print("6")
+                            attackerDeleted = self.takeCasualties(attacker[0], choice='Inf', n=attacker[1])
+                            self.deleteUnit(attackerDeleted)
+
+
+                    #If the number of defenders = 0, the attacker automatically wins, and the province is seized by the attacker.
+                    if defender[0].__len__() == 0:
+                        self.conquerTile(self.map.board[self.battles[0][0]][self.battles[0][1]], self.currentPlayer)
+                        if self.battles.__len__() == 1:
+                            self.battles = []
+                        else:
+                            self.battles.remove(self.battles[0])
+                    #elif the hits the defender has to take is greater than 0, but lower than the number of units.
+                    elif defender[1] > 0  and  defender[1] <= defender[0]['Inf'].__len__():
+                        defenderKeys = list(defender[0].keys())
+                        #If the defender is also a bot
+                        if defender[0][defenderKeys[0]][0].owner.human == False:
+                            self.currentPlayer = defender[0][defenderKeys[0]][0].owner
+                            defenderDeleted = self.takeCasualties(defender[0], choice='Inf', n=defender[1])
+                            self.deleteUnit(defenderDeleted)
+                            attackerKeys = list(attacker[0].keys())
+                            self.currentPlayer = attacker[0][attackerKeys[0]][0].owner
+                        #Else it is a human, and the human has to be able to decide which units to kill.
+                        else:
+                            self.currentPlayer = defender[0][defenderKeys[0]][0].owner
+                            print("player Turn")
+                            return defender
+                    #If the defender isn't zero, in this case meaning it is always higher than the number of units in the city
+                    elif defender[1] > defender[0]['Inf'].__len__():
+                        defenderDeleted = self.takeCasualties(defender[0], choice='Inf', n=defender[0]['Inf'].__len__())
+                        self.deleteUnit(defenderDeleted)
+                        '''if defender[1] > defender[0]['Inf'].__len__():
+                            defenderDeleted = self.takeCasualties(defender[0], choice='Inf', n=defender[0]['Inf'].__len__())
+                            self.deleteUnit(defenderDeleted)
+                        else:
+                            defenderDeleted = self.takeCasualties(defender[0], choice='Inf', n=defender[1])
+                            self.deleteUnit(defenderDeleted)
+                        '''
+                        if attacker[0]['Inf'].__len__() > 0 and not lostAttack:
+                            self.conquerTile(self.map.board[self.battles[0][0]][self.battles[0][1]], self.currentPlayer)
+
+                        if self.battles.__len__() == 1:
+                            self.battles = []
+                        elif self.battles.__len__() > 1:
+                            self.battles.remove(self.battles[0])
+
+                self.phase = 3
         elif self.phase == 3:
             while self.moveable.__len__() > 0:
                 if r.random() > 0.5:
@@ -292,8 +396,14 @@ class Game():
                     self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__)
                 else:
                     break
+            self.nextPhase()
         elif self.phase == 4:
             print("Phase 4")
+            self.nextPhase()
+        elif self.phase == 5:
+            print("Phase 5")
+            self.resetDasUnits()
+            self.nextPhase()
 
 
 
