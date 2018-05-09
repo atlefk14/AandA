@@ -12,4 +12,6 @@ game = Game.Game(size=(2, 2), nations=[Germany, Russia])
 info = None
 
 while True:
-    game.randomBot()
+    val = game.randomBot()
+    if val == True:
+        break

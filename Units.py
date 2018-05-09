@@ -53,7 +53,9 @@ class Infantry(Unit):
 
 
     def __repr__(self):
-        return self.owner.name + "_" + self.type
+        pos = self.getPosition()
+
+        return self.owner.name + "_" + self.type+"_"+str(pos[0])+","+str(pos[1])
 
 
 class Tank(Unit):
