@@ -62,6 +62,7 @@ class Tank(Unit):
     def __init__(self, owner, success=3):
         super().__init__()
         self.range = 2
+        self.type = 'Tank'
         self.owner = owner
         self.attSuccess = success
         self.defSuccess = success

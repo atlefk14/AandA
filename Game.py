@@ -17,11 +17,12 @@ class Game():
         self.PCUs = None  # self.calculatePCUs()
         self.deployablePlaces = None
         self.borderTiles = self.calulateBorder()
-        self.startingConditions(n=2)
+        self.startingConditions(n=12)
         self.battles = []
         self.moveable = self.moveableUnits()
         self.recruitAbleList = [2]
         self.history = []
+
     def calulateBorder(self):
         borderTiles = []
         for w in self.map.board:
@@ -38,11 +39,22 @@ class Game():
         for tile in self.borderTiles:
             for i in range(n):
                 infUnit = Units.Infantry(owner=tile.owner)
+                tankUnit = Units.Tank(owner=tile.owner)
                 tile.units.append(infUnit)
+                #tile.units.append(tankUnit)
+                tankUnit.setPosition(tile.cords)
                 infUnit.setPosition(tile.cords)
                 if tile.owner not in self.units:
                     self.units[tile.owner] = []
                 self.units[tile.owner].append(infUnit)
+                #self.units[tile.owner].append(tankUnit)
+
+        deployed = list()
+        for tile in self.borderTiles:
+            if tile.owner not in deployed:
+                deployed.append(tile.owner)
+                tile.constructions.append(Buildings.Industry(owner=tile.owner))
+
 
     def rotate(self, n=1):
         return self.nations[n:] + self.nations[:n]
@@ -51,10 +63,10 @@ class Game():
         deployablePlaces = []
         for w in self.map.board:
             for h in w:
-                # h.constructions.append(Buildings.Industry('Germany'))
-                for const in h.constructions:
-                    if isinstance(const, Buildings.Industry):
-                        deployablePlaces.append(h)
+                if h.owner == self.currentPlayer:
+                    for const in h.constructions:
+                        if isinstance(const, Buildings.Industry):
+                            deployablePlaces.append(h)
         return deployablePlaces
 
     def findMyUnits(self):
@@ -102,11 +114,16 @@ class Game():
     def recruitUnit(self, n):
         if n != 0:
             print(n)
+
         if n == 0:
-            inf = Units.Infantry(self.currentPlayer)
-        if not n.__str__() in self.purchases:
-            self.purchases[n.__str__()] = []
-        self.purchases[n.__str__()].append(inf)
+            unit = Units.Infantry(self.currentPlayer)
+        elif n == 1:
+            unit = Units.Tank(self.currentPlayer)
+
+        if self.currentPlayer not in self.purchases:
+            self.purchases[self.currentPlayer] = []
+        self.purchases[self.currentPlayer].append(unit)
+
 
     def initTurn(self):
         self.deployablePlaces = self.calculatePCUs()
@@ -141,8 +158,9 @@ class Game():
                     if unit.usedSteps == unit.range:
                         try:
                             self.moveable.remove(unit)
-                        except:
-                            print("mordi")
+                        except ValueError:
+                            print(ValueError.args)
+
                     toTile.units.append(unit)
                     fromTile.units.remove(unit)
                     d += 1
@@ -253,16 +271,6 @@ class Game():
         if isNewOwner == True:
             self.conquerTile(self.map.board[cords[0]][cords[1]], newOwner)
 
-    def direction(self, n):
-        if n == 0:
-            return (1,0)
-        elif n == 1:
-            return (0,1)
-        elif n ==2:
-            return (-1, 0)
-        elif n ==3:
-            return (0, -1)
-
     def winnerwinnerchickendinner(self):
         winner = True
         for w in self.map.board:
@@ -275,6 +283,7 @@ class Game():
         moved = dict()
         if self.phase == 0:
             self.moveableUnits()
+            self.deployablePlaces = self.findDeployablePlaces()
             self.nextPhase()
         elif self.phase == 1:
             #NOTE!!!!!!! This should be done the round before.
@@ -309,12 +318,13 @@ class Game():
         elif self.phase == 2.5:
             print("Phase 2.5")
             while self.battles.__len__() > 0:
-                retreat = 1.0
+                retreat = 0.1
                 random = r.random()
                 results = self.doBattle(self.battles[0])
                 attacker = results[0]
                 defender = results[1]
 
+                '''
                 if attacker[0].__len__() == 0:
                     if self.battles.__len__() == 1:
                         self.battles = []
@@ -322,6 +332,7 @@ class Game():
                         self.battles.remove(self.battles[0])
                     print(self.history)
                     break
+                '''
                 print(self.history)
                 self.history.append(((attacker, defender), attacker[0]['Inf'][0].getPosition()))
                 lostAttack = False
@@ -365,8 +376,6 @@ class Game():
                         attackerDeleted = self.takeCasualties(attacker[0], choice='Inf', n=attacker[0]['Inf'].__len__())
                         self.deleteUnit(attackerDeleted)
                         totalAfter = self.map.board[pos[0], pos[1]].units.__len__()
-                        if (totalBefore-totalAfter) == 0:
-                            print("Her er feilen for faen i helvete satan")
                         lostAttack = True
                         print(self.battles)
                         if self.battles.__len__() == 1:
@@ -421,7 +430,7 @@ class Game():
                         self.battles = []
                     elif self.battles.__len__() > 1:
                         self.battles.remove(self.battles[0])
-            self.phase = 3
+            self.phase = 4
             self.nextPhase()
         elif self.phase == 3:
             print("Phase 3")
@@ -442,6 +451,13 @@ class Game():
             self.nextPhase()
         elif self.phase == 5:
             print("Phase 5")
+            while self.purchases[self.currentPlayer].__len__() > 0:
+                i = r.randint(0, self.deployablePlaces.__len__() - 1)
+                province = self.deployablePlaces[i]
+                unit = self.purchases[self.currentPlayer][0]
+                self.purchases[self.currentPlayer].remove(unit)
+                province.units.append(unit)
+                unit.setPosition(province.cords)
             if self.winnerwinnerchickendinner():
                 return True
             else:
@@ -449,42 +465,3 @@ class Game():
                 self.nextPhase()
 
 
-
-'''
-game = Game((2, 2), [('Germany', 2), ('Russia', 2)])
-game.nextTurn()
-game.initTurn()
-game.nextTurn()
-game.initTurn()
-print(game.findMyUnits().__len__())
-# print(game.map.board)
-#game.conquerTile(game.map.board[4][3], game.currentPlayer)
-# print(game.map.board[3][4])
-# print(game.map.board)
-# print(game.map.board[0][3])
-game.moveableUnits()
-
-print(game.moveable)
-#print(game.map.board[0][1])
-game.moveUnit(game.map.board[0][0], game.map.board[0][1], 2, Units.Infantry)   #Ser ikke forskjell når eg sende 1 og 2 units
-#game.moveUnit(game.map.board[0][0], game.map.board[0][1], 1, Units.Infantry)
-#game.moveUnit(game.map.board[0][3], game.map.board[0][2], 1, Units.Infantry)
-#print(game.map.board)
-
-print(game.battles[0])
-results = game.doBattle(game.battles[0])
-print(results)
-attacker = results[0]
-defender = results[1]0
-attacker = game.takeCasualties(attacker[0], choice='Inf', n=attacker[1])
-print(attacker)
-defender = game.takeCasualties(defender[0], choice='Inf', n=defender[1])
-print(defender)
-game.deleteUnit(defender)
-game.deleteUnit(attacker)
-print(game.map.board[0][1])
-game.newOwner(game.battles[0])
-print(game.map.board[0][1])
-game.moveableUnits()
-print(game.moveable)
-'''

@@ -9,7 +9,8 @@ Germany = Nations.Nation(name='Germany', human=False)
 Russia = Nations.Nation(name='Russia', human=False)
 game = Game.Game(size=(2, 2), nations=[Germany, Russia])
 
-info = None
+game.purchases[Germany.name] = []
+game.purchases[Russia.name] = []
 
 while True:
     val = game.randomBot()
