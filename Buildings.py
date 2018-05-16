@@ -3,3 +3,5 @@ class Industry(object):
         self.owner = owner
         self.cost = 10
 
+    def __repr__(self):
+        return "Ind"

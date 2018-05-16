@@ -17,7 +17,7 @@ class Game():
         self.PCUs = None  # self.calculatePCUs()
         self.deployablePlaces = None
         self.borderTiles = self.calulateBorder()
-        self.startingConditions(n=12)
+        self.startingConditions(n=4)
         self.battles = []
         self.moveable = self.moveableUnits()
         self.recruitAbleList = [2]
@@ -72,6 +72,16 @@ class Game():
     def findMyUnits(self):
 
         return self.units[self.currentPlayer]
+
+
+    def validBoard(self):
+        for w in self.map.board:
+            for h in w:
+                for unit in h.units:
+                    if unit.owner != h.owner:
+                        return False
+        return True
+
 
     def calculatePCUs(self):
         PCUs = 0
@@ -301,7 +311,7 @@ class Game():
                 #print(pos)
                 #print("Choice "+ str(choice))
         elif self.phase == 2:
-            print("Phase 2")
+            #print("Phase 2")
             self.battles = []
             while self.moveable.__len__() > 0:
                 if r.random() > 0.1:
@@ -316,7 +326,7 @@ class Game():
                     break
             self.phase=2.5
         elif self.phase == 2.5:
-            print("Phase 2.5")
+            #print("Phase 2.5")
             while self.battles.__len__() > 0:
                 retreat = 0.1
                 random = r.random()
@@ -324,22 +334,21 @@ class Game():
                 attacker = results[0]
                 defender = results[1]
 
-                '''
                 if attacker[0].__len__() == 0:
-                    if self.battles.__len__() == 1:
+                    print(self.map.board)
+                    '''if self.battles.__len__() == 1:
                         self.battles = []
                     else:
                         self.battles.remove(self.battles[0])
                     print(self.history)
                     break
                 '''
-                print(self.history)
-                self.history.append(((attacker, defender), attacker[0]['Inf'][0].getPosition()))
+                #print(self.history)
+                self.history.append((attacker, defender))
                 lostAttack = False
-
+                '''
                 if random < retreat and not defender[0].__len__() == 0:
                     print("1")
-                    '''
                     tobeDeleted = []
                     oldPos = None
                     for unit in self.map.board[self.battles[0][0], self.battles[0][1]].units:
@@ -364,28 +373,29 @@ class Game():
                 '''
                 #If the hits on the attackers units is higher than zero, a unit must die.
                 if attacker[1] > 0:
-                    print("2")
+                    #print("2")
                     pos = list(attacker[0].keys())
                     #If the number of hits is higher than the number of possible 'death', this removes all possible units. This also automatically means that the battle is over.
                     #TODO as of now this just supports INF
                     if attacker[1] >= attacker[0]['Inf'].__len__():
-                        unit = attacker[0]['Inf'][0]
-                        pos = unit.getPosition()
-                        totalBefore = self.map.board[pos[0], pos[1]].units.__len__()
-                        print("3")
+                        #unit = attacker[0]['Inf'][0]
+                        #pos = unit.getPosition()
+                        #totalBefore = self.map.board[pos[0], pos[1]].units.__len__()
+                        #print("3")
                         attackerDeleted = self.takeCasualties(attacker[0], choice='Inf', n=attacker[0]['Inf'].__len__())
                         self.deleteUnit(attackerDeleted)
-                        totalAfter = self.map.board[pos[0], pos[1]].units.__len__()
+                        #totalAfter = self.map.board[pos[0], pos[1]].units.__len__()
                         lostAttack = True
-                        print(self.battles)
+                        #print(self.battles)
                         if self.battles.__len__() == 1:
-                            print("4")
+                            #print("4")
                             self.battles = []
-                            print("Dette er battles: "+" ".join(self.battles))
+                            #print("Dette er battles: "+" ".join(self.battles))
                         else:
-                            print("5")
+                            #print("5")
                             self.battles.remove(self.battles[0])
-                        print(self.battles)
+                            #print("Fjernet")
+                        #print(self.battles)
                     #Else the number of hit units must die.
                     else:
                         print("6")
@@ -412,7 +422,7 @@ class Game():
                     #Else it is a human, and the human has to be able to decide which units to kill.
                     else:
                         self.currentPlayer = defender[0][defenderKeys[0]][0].owner
-                        print("player Turn")
+                        #print("player Turn")
                         return defender
                 #If the defender isn't zero, in this case meaning it is always higher than the number of units in the city
                 elif defender[1] >= defender[0]['Inf'].__len__():
@@ -430,10 +440,12 @@ class Game():
                         self.battles = []
                     elif self.battles.__len__() > 1:
                         self.battles.remove(self.battles[0])
+            if not self.validBoard():
+                print(self.history)
             self.phase = 4
             self.nextPhase()
         elif self.phase == 3:
-            print("Phase 3")
+            #print("Phase 3")
             #self.nextPhase()
             while self.moveable.__len__() > 0:
                 if r.random() > 0.5:
@@ -451,13 +463,16 @@ class Game():
             self.nextPhase()
         elif self.phase == 5:
             print("Phase 5")
-            while self.purchases[self.currentPlayer].__len__() > 0:
-                i = r.randint(0, self.deployablePlaces.__len__() - 1)
-                province = self.deployablePlaces[i]
-                unit = self.purchases[self.currentPlayer][0]
-                self.purchases[self.currentPlayer].remove(unit)
-                province.units.append(unit)
-                unit.setPosition(province.cords)
+            if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
+                while self.purchases[self.currentPlayer].__len__() > 0:
+
+                    i = r.randint(0, self.deployablePlaces.__len__() - 1)
+                    province = self.deployablePlaces[i]
+                    unit = self.purchases[self.currentPlayer][0]
+                    self.purchases[self.currentPlayer].remove(unit)
+                    province.units.append(unit)
+                    unit.setPosition(province.cords)
+                    self.units[self.currentPlayer].append(unit)
             if self.winnerwinnerchickendinner():
                 return True
             else:
