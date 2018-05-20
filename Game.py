@@ -8,7 +8,7 @@ class Game():
         self.map = mapGen.MapClass(size, nations)
         self.nations = nations
         self.startPlayer = nations[0]
-        self.units = dict()
+        #self.units = dict()
         self.currentPlayer = self.startPlayer
         self.terminal = False
         self.turn = 0
@@ -44,9 +44,9 @@ class Game():
                 #tile.units.append(tankUnit)
                 tankUnit.setPosition(tile.cords)
                 infUnit.setPosition(tile.cords)
-                if tile.owner not in self.units:
-                    self.units[tile.owner] = []
-                self.units[tile.owner].append(infUnit)
+                #if tile.owner not in self.units:
+                    #self.units[tile.owner] = []
+                #self.units[tile.owner].append(infUnit)
                 #self.units[tile.owner].append(tankUnit)
 
         deployed = list()
@@ -68,11 +68,6 @@ class Game():
                         if isinstance(const, Buildings.Industry):
                             deployablePlaces.append(h)
         return deployablePlaces
-
-    def findMyUnits(self):
-
-        return self.units[self.currentPlayer]
-
 
     def validBoard(self):
         for w in self.map.board:
@@ -118,18 +113,15 @@ class Game():
         for pos in self.recruitAbleList:
             if pos < n:
                 rtr.append(pos)
-
         return rtr
 
     def recruitUnit(self, n):
         if n != 0:
             print(n)
-
         if n == 0:
             unit = Units.Infantry(self.currentPlayer)
         elif n == 1:
             unit = Units.Tank(self.currentPlayer)
-
         if self.currentPlayer not in self.purchases:
             self.purchases[self.currentPlayer] = []
         self.purchases[self.currentPlayer].append(unit)
@@ -176,9 +168,17 @@ class Game():
                     d += 1
                     c -= 1
 
+
     def resetDasUnits(self):
+        for h in self.map.board:
+            for w in h:
+                for unit in w.units:
+                    unit.reset()
+    '''
         for unit in self.units[self.currentPlayer]:
             unit.reset()
+    '''
+
 
     def findPossibleBattles(self):
         battlePositions = set()
@@ -247,18 +247,25 @@ class Game():
 
     def deleteUnit(self, units):
         for unit in units:
-            self.units[unit.owner].remove(unit)
+            #self.units[unit.owner].remove(unit)
             cords = unit.getPosition()
             self.map.board[cords[0]][cords[1]].units.remove(unit)
         return True
 
     def moveableUnits(self):
         moveable = []
+        for h in self.map.board:
+            for w in h:
+                for unit in w.units:
+                    if unit.usedSteps != unit.range:
+                        moveable.append(unit)
+                self.moveable = moveable
+        '''
         for unit in self.units[self.currentPlayer]:
             if unit.usedSteps != unit.range:
                 moveable.append(unit)
         self.moveable = moveable
-
+    '''
     def takeCasualties(self, units, choice, n):
         toBeDeleted = []
         c=0
@@ -442,6 +449,8 @@ class Game():
                         self.battles.remove(self.battles[0])
             if not self.validBoard():
                 print(self.history)
+                print(self.map.board)
+                return True
             self.phase = 4
             self.nextPhase()
         elif self.phase == 3:
@@ -472,7 +481,7 @@ class Game():
                     self.purchases[self.currentPlayer].remove(unit)
                     province.units.append(unit)
                     unit.setPosition(province.cords)
-                    self.units[self.currentPlayer].append(unit)
+                    #self.units[self.currentPlayer].append(unit)
             if self.winnerwinnerchickendinner():
                 return True
             else:
