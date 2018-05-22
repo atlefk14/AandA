@@ -68,3 +68,9 @@ class Tank(Unit):
         self.defSuccess = success
         # self.setPosition(position)
         self.cost = 5
+
+    def __repr__(self):
+        pos = self.getPosition()
+
+        return self.owner.name + "_" + self.type+"_"+str(pos[0])+","+str(pos[1])
+
