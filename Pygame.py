@@ -49,7 +49,7 @@ while True:
                 while True:
                     game.bot()
                     if game.phase == 5:
-                        print(game.turn)
-                        print(game.currentPlayer)
+                        #print(game.turn)
+                        #print(game.currentPlayer)
                         print(game.map.board)
                         break
