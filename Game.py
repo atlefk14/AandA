@@ -2,6 +2,7 @@ import MapGenerator as mapGen
 import Units
 import Buildings
 import random as r
+import numpy as np
 
 class Game():
     def __init__(self, size, nations):
@@ -22,6 +23,13 @@ class Game():
         self.moveable = self.moveableUnits()
         self.recruitAbleList = [2, 5]
         self.history = []
+
+        self.lastTurn = self.map.board
+
+    def goback(self):
+        self.map.board = self.lastTurn
+        self.turn-=1
+
 
     def calulateBorder(self):
         borderTiles = []
@@ -92,6 +100,7 @@ class Game():
         if self.currentPlayer == self.startPlayer:
             self.turn += 1
         self.phase = 0
+
         return
 
     def getTurn(self):
@@ -100,6 +109,7 @@ class Game():
     def nextPhase(self):
         if self.phase == 5:
             self.nextTurn()
+            self.lastTurn = np.array(self.map.board, copy=True)
         else:
             self.phase += 1
         return
@@ -346,40 +356,63 @@ class Game():
 
         return c
 
-    def randomBot(self):
-        moved = dict()
+    def bot(self):
+        if not self.currentPlayer.human:
+            if self.currentPlayer.difficulty == "Random":
+                self.randomBot()
+            elif self.currentPlayer.difficulty == "Turtle":
+                print("Turle")
+                self.TurtleBot()
+            elif self.currentPlayer.difficulty == "Easy":
+                self.easyBot()
+    '''
+    def easyBot(self):
         if self.phase == 0:
             self.moveableUnits()
             self.deployablePlaces = self.findDeployablePlaces()
             self.nextPhase()
+
         elif self.phase == 1:
-            #NOTE!!!!!!! This should be done the round before.
             self.PCUs = self.calculatePCUs()
             used = 0
             while True:
-                pos = self.recruitable(self.PCUs-used)
+                pos = self.recruitable(self.PCUs - used)
                 if pos.__len__() == 0:
                     self.nextPhase()
                     break
-                choice = r.randint(0, len(pos)-1)
+                choice = r.randint(0, len(pos) - 1)
                 self.recruitUnit(choice)
                 used += pos[choice]
         elif self.phase == 2:
             self.battles = []
             while self.moveable.__len__() > 0:
-                if r.random() > 0.1:
-                    unit = self.moveable[0]
-                    pos = unit.getPosition()
-
-                    toTile = r.choice(self.map.board[pos[0]][pos[1]].neighbours)
-                    if toTile.owner != self.currentPlayer:
-                        moved[toTile.cords.__str__()] = pos
-                    self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__, unit)
-                    #print(toTile)
-                else:
+                unit = self.moveable[0]
+                x, y = unit.getPosition()
+                currentTile = self.map.board[x][y]
+                possibleDestinations = currentTile.neighbours
+                realisticDestination = []
+                for tile in possibleDestinations:
+                    if tile.owner != self.currentPlayer:
+                        print("Foe"+ str(tile.units.__len__()))
+                        print(currentTile.units.__len__())
+                        if tile.units.__len__() <= currentTile.units.__len__():
+                            print("I add")
+                            realisticDestination.append(tile)
+                if realisticDestination.__len__() == 0:
+                    print("Ingen realistiske mål, turlemode")
                     break
-            self.phase=2.5
-
+                destTile = r.choice(realisticDestination)
+                if destTile.units.__len__() == currentTile.units.__len__():
+                    for unit in currentTile.units:
+                        self.moveUnit(currentTile, destTile, 1, unit.__class__, unit)
+                else:
+                    c = currentTile.units.__len__()
+                    for unit in currentTile.units:
+                        if c == 1:
+                            break
+                        self.moveUnit(currentTile, destTile, 1, unit.__class__, unit)
+                        c-=1
+                self.phase = 2.5
         elif self.phase == 2.5:
             while self.battles.__len__() > 0:
                 results = self.doBattle(self.battles[0])
@@ -392,7 +425,6 @@ class Game():
                     attackerTypes = list(attacker[0].keys())
                     if attacker[1] >= attackerCount:
                         self.takeCasualties(attacker[0], 'All', attackerCount)
-                        #self.takeCasualties(attacker[0], 'Inf', attackerCount)
                         attackFinished = True
                     else:
                         toBeDeleted = dict()
@@ -468,6 +500,15 @@ class Game():
             self.nextPhase()
         elif self.phase == 5:
             #print("Phase 5")
+            if self.winnerwinnerchickendinner():
+                print(self.turn)
+                return True
+            else:
+                if self.turn % 100 == 0:
+                    print(self.calculateIndivualUnits())
+                self.resetDasUnits()
+                self.nextPhase()
+
             if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
                 while self.purchases[self.currentPlayer].__len__() > 0:
 
@@ -478,6 +519,54 @@ class Game():
                     tile.units.append(unit)
                     unit.setPosition(tile.cords)
                     #self.units[self.currentPlayer].append(unit)
+    '''
+    def TurtleBot(self):
+        moved = dict()
+        print("Hei")
+        if self.phase == 0:
+            self.moveableUnits()
+            self.deployablePlaces = self.findDeployablePlaces()
+            self.nextPhase()
+        elif self.phase == 1:
+            #NOTE!!!!!!! This should be done the round before.
+            self.PCUs = self.calculatePCUs()
+            used = 0
+            while True:
+                pos = self.recruitable(self.PCUs-used)
+                if pos.__len__() == 0:
+                    self.nextPhase()
+                    break
+                choice = r.randint(0, len(pos)-1)
+                self.recruitUnit(choice)
+                used += pos[choice]
+        elif self.phase == 2:
+            while self.moveable.__len__() > 0:
+                break
+            self.nextPhase()
+
+        elif self.phase == 3:
+            while self.moveable.__len__() > 0:
+                if r.random() > 0.5:
+                    unit = self.moveable[0]
+                    pos = unit.getPosition()
+                    possible = []
+                    for tile in self.map.board[pos[0]][pos[1]].neighbours:
+                        if tile.owner == self.currentPlayer:
+                            possible.append(tile)
+                    if possible.__len__() == 0:
+                        self.moveable.remove(self.moveable[0])
+                        break
+                    toTile = r.choice(possible)
+                    if toTile.owner == self.currentPlayer:
+                        self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__, unit)
+                else:
+                    break
+            self.nextPhase()
+        elif self.phase == 4:
+            #print("Phase 4")
+            self.nextPhase()
+        elif self.phase == 5:
+            #print("Phase 5")
             if self.winnerwinnerchickendinner():
                 print(self.turn)
                 return True
@@ -486,5 +575,160 @@ class Game():
                     print(self.calculateIndivualUnits())
                 self.resetDasUnits()
                 self.nextPhase()
+
+            if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
+                while self.purchases[self.currentPlayer].__len__() > 0:
+                    i = r.randint(0, self.deployablePlaces.__len__() - 1)
+                    tile = self.deployablePlaces[i]
+                    unit = self.purchases[self.currentPlayer][0]
+                    self.purchases[self.currentPlayer].remove(unit)
+                    tile.units.append(unit)
+                    unit.setPosition(tile.cords)
+                    #self.units[self.currentPlayer].append(unit)
+
+
+    def randomBot(self):
+        moved = dict()
+        if self.phase == 0:
+            self.moveableUnits()
+            self.deployablePlaces = self.findDeployablePlaces()
+            self.nextPhase()
+        elif self.phase == 1:
+            #NOTE!!!!!!! This should be done the round before.
+            self.PCUs = self.calculatePCUs()
+            used = 0
+            while True:
+                pos = self.recruitable(self.PCUs-used)
+                if pos.__len__() == 0:
+                    self.nextPhase()
+                    break
+                choice = r.randint(0, len(pos)-1)
+                self.recruitUnit(choice)
+                used += pos[choice]
+        elif self.phase == 2:
+            self.battles = []
+            while self.moveable.__len__() > 0:
+                if r.random() > 0.1:
+                    unit = self.moveable[0]
+                    pos = unit.getPosition()
+
+                    toTile = r.choice(self.map.board[pos[0]][pos[1]].neighbours)
+                    if toTile.owner != self.currentPlayer:
+                        moved[toTile.cords.__str__()] = pos
+                    self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__, unit)
+                    #print(toTile)
+                else:
+                    break
+            self.phase=2.5
+
+        elif self.phase == 2.5:
+            while self.battles.__len__() > 0:
+                results = self.doBattle(self.battles[0])
+                attacker = results[0]
+                defender = results[1]
+                attackFinished = False
+                defendFinished = False
+                if attacker[1] > 0:
+                    attackerCount = self.findUnitCount(attacker[0])
+                    attackerTypes = list(attacker[0].keys())
+                    if attacker[1] >= attackerCount:
+                        #print(type(attacker[1]))
+                        self.takeCasualties(attacker[0], 'All', attackerCount)
+                        attackFinished = True
+                    else:
+                        toBeDeleted = dict()
+                        x, y = self.battles[0]
+                        before = self.map.board[x][y].units.__len__()
+                        for i in range(attacker[1]):
+                            unitType = r.choice(attackerTypes)
+                            unit = attacker[0][unitType][0]
+                            if not unit.type in toBeDeleted:
+                                toBeDeleted[unit.type] = []
+                            toBeDeleted[unit.type].append(unit)
+                            attacker[0][unitType].remove(unit)
+                            if attacker[0][unitType].__len__() == 0:
+                                attacker[0].pop(unitType, None)
+                            attackerTypes = list(attacker[0].keys())
+
+                        for key in toBeDeleted:
+                            self.takeCasualties(toBeDeleted, toBeDeleted[key][0].type, toBeDeleted[key].__len__())
+                        after = self.map.board[x][y].units.__len__()
+                        #print("Before: "+str(before))
+                        #print("After: "+str(after))
+
+                if defender[1] > 0:
+                    defenderCount = self.findUnitCount(defender[0])
+                    defenderTypes = list(defender[0].keys())
+                    if defender[1] >= defenderCount:
+                        self.takeCasualties(defender[0], 'All', defenderCount)
+                        defendFinished = True
+                    else:
+                        defenderKeys = list(defender[0].keys())
+                        if not defender[0][defenderKeys[0]][0].owner.human:
+                            toBeDeleted = dict()
+                            for i in range(defender[1]):
+                                unitType = r.choice(defenderTypes)
+                                unit = defender[0][unitType][0]
+                                if not unit.type in toBeDeleted:
+                                    toBeDeleted[unit.type] = []
+                                toBeDeleted[unit.type].append(unit)
+                                defender[0][unitType].remove(unit)
+                                if defender[0][unitType].__len__() == 0:
+                                    defender[0].pop(unitType, None)
+                                defenderTypes = list(defender[0].keys())
+                            for key in toBeDeleted:
+                                self.takeCasualties(toBeDeleted, toBeDeleted[key][0].type, toBeDeleted[key].__len__())
+                        else:
+                            self.currentPlayer = defender[0][defenderKeys[0]][0].owner
+                            return defender
+
+                if defendFinished and not attackFinished:
+                    self.conquerTile(self.map.board[self.battles[0][0]][self.battles[0][1]], self.currentPlayer)
+
+                if attackFinished or defendFinished:
+                    self.battles.remove(self.battles[0])
+
+            self.phase = 3
+        elif self.phase == 3:
+            while self.moveable.__len__() > 0:
+                if r.random() > 0.5:
+                    unit = self.moveable[0]
+                    pos = unit.getPosition()
+                    possible = []
+                    for tile in self.map.board[pos[0]][pos[1]].neighbours:
+                        if tile.owner == self.currentPlayer:
+                            possible.append(tile)
+                    if possible.__len__() == 0:
+                        self.moveable.remove(self.moveable[0])
+                        break
+                    toTile = r.choice(possible)
+
+                    if toTile.owner == self.currentPlayer:
+                        self.moveUnit(self.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__, unit)
+                else:
+                    break
+            self.nextPhase()
+        elif self.phase == 4:
+            #print("Phase 4")
+            self.nextPhase()
+        elif self.phase == 5:
+            #print("Phase 5")
+            if self.winnerwinnerchickendinner():
+                print(self.turn)
+                return True
+            else:
+                self.resetDasUnits()
+                self.nextPhase()
+
+            if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
+                while self.purchases[self.currentPlayer].__len__() > 0:
+                    i = r.randint(0, self.deployablePlaces.__len__() - 1)
+                    tile = self.deployablePlaces[i]
+                    unit = self.purchases[self.currentPlayer][0]
+                    self.purchases[self.currentPlayer].remove(unit)
+                    tile.units.append(unit)
+                    unit.setPosition(tile.cords)
+                    #self.units[self.currentPlayer].append(unit)
+
 
 
