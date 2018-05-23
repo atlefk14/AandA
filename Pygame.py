@@ -9,7 +9,8 @@ pygame.init()
 width, height = 640, 480
 screen = pygame.display.set_mode((width, height))
 
-x, y = 2, 2
+x, y = 6, 6
+
 
 Germany = Nations.Nation(name='Germany', human=False)
 Russia = Nations.Nation(name='Russia', human=False)
@@ -42,14 +43,17 @@ while True:
     # img.show()
     img = pygame.surfarray.make_surface(np.array(img))
     screen.blit(pygame.transform.rotate(img, 90), (0, 0))
+    #screen.blit(pygame.transform.flip(img, False, True), (0, 0))
     pygame.display.flip()
     for event in pygame.event.get():
         if event.type == pygame.KEYUP:
             if event.key == K_RETURN:
                 while True:
                     game.bot()
-                    if game.phase == 5:
+                    if game.phase == 0:
                         #print(game.turn)
                         #print(game.currentPlayer)
-                        print(game.map.board)
+                        #print(game.map.board)
+                        break
+                    elif game.winnerwinnerchickendinner():
                         break

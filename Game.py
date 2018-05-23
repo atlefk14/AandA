@@ -75,6 +75,7 @@ class Game():
                     for const in h.constructions:
                         if isinstance(const, Buildings.Industry):
                             deployablePlaces.append(h)
+
         return deployablePlaces
 
     def validBoard(self):
@@ -142,10 +143,9 @@ class Game():
         self.battles = []
 
     def conquerTile(self, tile, newOwner):
-        try:
-            tile.owner = newOwner
-        except:
-            return None
+
+        tile.owner = newOwner
+
 
     def moveUnit(self, fromTile, toTile, n, type, unit):
         c = 0
@@ -162,7 +162,7 @@ class Game():
                 if deltaX + deltaY <= unit.range:
                     if toTile.owner != self.currentPlayer:
                         if toTile.units.__len__() == 0:
-                            self.conquerTile(toTile, fromTile.owner)
+                            self.conquerTile(toTile, self.currentPlayer)
                         elif not self.battles.__contains__(toTile.cords):
                             self.battles.append(toTile.cords)
                     unit.setStep(deltaY + deltaX)
@@ -292,17 +292,17 @@ class Game():
         return total
 
     def deleteUnit(self, units):
-        x, y = units[0].getPosition()
-        heiLengde = self.map.board[x][y].units.__len__()
+        #x, y = units[0].getPosition()
+        #heiLengde = self.map.board[x][y].units.__len__()
         for unit in units:
             cords = unit.getPosition()
             tile = self.map.board[cords[0]][cords[1]]
             tile.units.remove(unit)
-            if tile.cords in self.moveable:
+            if unit in self.moveable:
                 self.moveable.remove(unit)
-        hadeLengde = self.map.board[x][y].units.__len__()
-        print("hei: "+str(heiLengde))
-        print("hade: "+ str(hadeLengde))
+        #hadeLengde = self.map.board[x][y].units.__len__()
+        #print("hei: "+str(heiLengde))
+        #print("hade: "+ str(hadeLengde))
         return True
 
     def moveableUnits(self):
@@ -322,8 +322,8 @@ class Game():
         if choice == 'All':
             for key in units:
                 toBeDeleted += units[key]
-            print(toBeDeleted.__len__())
-            print(n)
+            #print(toBeDeleted.__len__())
+            #print(n)
         else:
             for unit in units[choice]:
                 if c == n:
@@ -601,11 +601,14 @@ class Game():
                     if unit.owner != h.owner:
                         battles.add(h.cords)
         return list(battles)
+
     def randomBot(self):
         moved = dict()
         if self.phase == 0:
             self.moveableUnits()
             self.deployablePlaces = self.findDeployablePlaces()
+            #print(self.currentPlayer)
+            #print(self.deployablePlaces)
             self.nextPhase()
         elif self.phase == 1:
             #NOTE!!!!!!! This should be done the round before.
@@ -676,10 +679,10 @@ class Game():
                         for key in toBeDeleted:
                             self.takeCasualties(toBeDeleted, toBeDeleted[key][0].type, toBeDeleted[key].__len__())
                         after = self.map.board[x][y].units.__len__()
-                        print("Remove some")
-                        print(self.battles[0])
-                        print("Before: "+str(before))
-                        print("After: "+str(after))
+                        #print("Remove some")
+                        #print(self.battles[0])
+                        #print("Before: "+str(before))
+                        #print("After: "+str(after))
 
                 if defender[1] > 0:
                     defenderCount = self.findUnitCount(defender[0])
@@ -737,23 +740,30 @@ class Game():
             #print("Phase 4")
             self.nextPhase()
         elif self.phase == 5:
+            #print(self.map.board)
             #print("Phase 5")
+            if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
+                #print("Eg KJØBE FARRR")
+                #print(self.deployablePlaces)
+                #print(self.purchases[self.currentPlayer])
+                while self.purchases[self.currentPlayer].__len__() > 0:
+                    i = r.randint(0, self.deployablePlaces.__len__() - 1)
+                    tile = self.deployablePlaces[i]
+                    unit = self.purchases[self.currentPlayer][0]
+                    #print(self.currentPlayer)
+                    #print(unit.owner)
+                    self.purchases[self.currentPlayer].remove(unit)
+                    tile.units.append(unit)
+                    unit.setPosition(tile.cords)
+                    #self.units[self.currentPlayer].append(unit)
+
             if self.winnerwinnerchickendinner():
                 print(self.turn)
                 return True
             else:
                 self.resetDasUnits()
                 self.nextPhase()
-
-            if self.currentPlayer in self.purchases and self.deployablePlaces.__len__() > 0:
-                while self.purchases[self.currentPlayer].__len__() > 0:
-                    i = r.randint(0, self.deployablePlaces.__len__() - 1)
-                    tile = self.deployablePlaces[i]
-                    unit = self.purchases[self.currentPlayer][0]
-                    self.purchases[self.currentPlayer].remove(unit)
-                    tile.units.append(unit)
-                    unit.setPosition(tile.cords)
-                    #self.units[self.currentPlayer].append(unit)
-
+                print(self.map.board)
+                print(self.calculateIndivualUnits())
 
 
