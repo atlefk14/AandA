@@ -6,10 +6,10 @@ from PIL import Image
 from pygame.locals import *
 
 pygame.init()
-width, height = 640, 480
+width, height = 1440, 996
 screen = pygame.display.set_mode((width, height))
 
-x, y = 6, 6
+x, y = 12, 12
 
 
 Germany = Nations.Nation(name='Germany', human=False)
@@ -39,7 +39,7 @@ while True:
     screen.fill(0)
     data = translateToArray(game.map.board)
     img = Image.fromarray(data, 'RGB')
-    img = img.resize((640, 480))
+    img = img.resize((1440, 996))
     # img.show()
     img = pygame.surfarray.make_surface(np.array(img))
     screen.blit(pygame.transform.rotate(img, 90), (0, 0))
@@ -51,6 +51,7 @@ while True:
                 while True:
                     game.bot()
                     if game.phase == 0:
+                        #print(game.map.board[0][0].neighbours)
                         #print(game.turn)
                         #print(game.currentPlayer)
                         #print(game.map.board)

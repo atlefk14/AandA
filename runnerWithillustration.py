@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import scipy
 
-x, y = 4, 3
+x, y = 4, 4
 
 Germany = Nations.Nation(name='Germany', human=False)
 Russia = Nations.Nation(name='Russia', human=False)
@@ -37,5 +37,4 @@ while True:
         img.save("Pictures/"+str(game.turn)+".jpg", 'JPEG')
         #img.show()
     if val == True:
-
         break
