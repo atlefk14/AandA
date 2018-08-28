@@ -62,7 +62,6 @@ while True:
                     if first:
                         game_manager.add_previous(game)
                         first = False
-                    #old.append(copy.deepcopy(game))
                     game.bot()
                     print(game.phase, game.turn)
                     update = True
@@ -72,7 +71,6 @@ while True:
 
                     elif game.winnerwinnerchickendinner():
                         break
-
             if event.key == K_BACKSPACE:
                 game = game_manager.go_back()
                 update = True
