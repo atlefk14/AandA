@@ -2,14 +2,33 @@ import MapGenerator as mapGen
 import Units
 import Buildings
 import random as r
+import copy
 import numpy as np
+
+
+class GameManager(object):
+    def __init__(self):
+        self.previous_states = []
+
+    def add_previous(self, game):
+        print("Legger til forrige")
+        self.previous_states.append(copy.deepcopy(game))
+
+    def go_back(self):
+        try:
+            print("Går tilbake til forrige")
+            previous_state = self.previous_states.pop()
+            return previous_state
+        except IndexError as e:
+            print(e)
+            return None
+
 
 class Game():
     def __init__(self, size, nations):
         self.map = mapGen.MapClass(size, nations)
         self.nations = nations
         self.startPlayer = nations[0]
-        #self.units = dict()
         self.currentPlayer = self.startPlayer
         self.terminal = False
         self.turn = 0
@@ -24,13 +43,6 @@ class Game():
         self.recruitAbleList = [2, 5]
         self.history = []
 
-        self.lastTurn = self.map.board
-
-    def goback(self):
-        self.map.board = self.lastTurn
-        self.turn-=1
-
-
     def calulateBorder(self):
         borderTiles = []
         for w in self.map.board:
@@ -43,6 +55,12 @@ class Game():
                 last = h
         return borderTiles
 
+    def phase_0(self):
+        self.moveableUnits()
+        self.deployablePlaces = self.findDeployablePlaces()
+        self.nextPhase()
+        self.PCUs = self.calculatePCUs()
+
     def startingConditions(self, n):
         for tile in self.borderTiles:
             for i in range(n):
@@ -53,12 +71,12 @@ class Game():
                 tankUnit.setPosition(tile.cords)
                 infUnit.setPosition(tile.cords)
 
-        #All the way to the left
-        tile = self.map.board[int(self.map.board.__len__()/2)-1][0]
+        # All the way to the left
+        tile = self.map.board[int(self.map.board.__len__() / 2) - 1][0]
         tile.constructions.append(Buildings.Industry(owner=tile.owner))
         print(self.map.board.__len__())
-        #All the way to the right
-        tile = self.map.board[int(self.map.board.__len__()/2)-1][self.map.board.__len__()-1]
+        # All the way to the right
+        tile = self.map.board[int(self.map.board.__len__() / 2) - 1][self.map.board.__len__() - 1]
         tile.constructions.append(Buildings.Industry(owner=tile.owner))
 
     def rotate(self, n=1):
@@ -83,7 +101,6 @@ class Game():
                         return (False, h.cords)
         return (True, -1)
 
-
     def calculatePCUs(self):
         PCUs = 0
         for w in self.map.board:
@@ -107,7 +124,6 @@ class Game():
     def nextPhase(self):
         if self.phase == 5:
             self.nextTurn()
-            self.lastTurn = np.array(self.map.board, copy=True)
         else:
             self.phase += 1
         return
@@ -133,7 +149,6 @@ class Game():
             self.purchases[self.currentPlayer] = []
         self.purchases[self.currentPlayer].append(unit)
 
-
     def initTurn(self):
         self.deployablePlaces = self.calculatePCUs()
         self.PCUs = self.calculatePCUs()
@@ -141,7 +156,6 @@ class Game():
 
     def conquerTile(self, tile, newOwner):
         tile.owner = newOwner
-
 
     def moveUnit(self, fromTile, toTile, n, type, unit):
         c = 0
@@ -154,13 +168,13 @@ class Game():
                 deltaX = abs(fromTile.cords[0] - toTile.cords[0])
                 deltaY = abs(fromTile.cords[1] - toTile.cords[1])
 
-                #todo add is legal function instead.
+                # todo add is legal function instead.
                 if deltaX + deltaY <= unit.range:
                     if toTile.owner != self.currentPlayer:
                         if unit.usedSteps == 0:
                             unit.setStep(unit.range)
                         else:
-                            unit.setStep(deltaX+deltaY)
+                            unit.setStep(deltaX + deltaY)
 
                         if toTile.units.__len__() == 0:
                             self.conquerTile(toTile, self.currentPlayer)
@@ -190,13 +204,11 @@ class Game():
                     d += 1
                     c -= 1
 
-
     def resetAllUnits(self):
         for h in self.map.board:
             for w in h:
                 for unit in w.units:
                     unit.reset()
-
 
     def findGlobalMax(self):
         maxUnit = 0
@@ -207,7 +219,6 @@ class Game():
                     maxUnit = length
 
         return maxUnit
-
 
     def getDice(self, n=6):
         return r.randint(1, n)
@@ -228,7 +239,7 @@ class Game():
         for key in attacking:
             for unit in attacking[key]:
                 dice = self.getDice()
-                #print(unit)
+                # print(unit)
                 if dice <= unit.attSuccess:
                     aHits += 1
         dHits = 0
@@ -256,7 +267,7 @@ class Game():
         total = 0
         for w in self.map.board:
             for h in w:
-                total+=h.units.__len__()
+                total += h.units.__len__()
         return total
 
     def deleteUnit(self, units):
@@ -281,7 +292,7 @@ class Game():
 
     def takeCasualties(self, units, choice, n):
         toBeDeleted = []
-        c=0
+        c = 0
         if choice == 'All':
             for key in units:
                 toBeDeleted += units[key]
@@ -290,12 +301,9 @@ class Game():
                 if c == n:
                     break
                 toBeDeleted.append(unit)
-                c+=1
+                c += 1
 
         self.deleteUnit(toBeDeleted)
-
-
-
 
     def winnerwinnerchickendinner(self):
         winner = True
@@ -305,27 +313,27 @@ class Game():
                     winner = False
         return winner
 
+    def findMovableInTile(self, cords):
+        units = []
+        for unit in self.map.board[cords[0]][cords[1]].units:
+            if unit.usedSteps > unit.range:
+                units.append(unit)
+        return units
+
     def findUnitCount(self, units):
         c = 0
         for key in units:
             for unit in units[key]:
-                c+=1
+                c += 1
 
         return c
 
     def bot(self):
         import Bots
         if not self.currentPlayer.human:
-
             if self.currentPlayer.difficulty == "Random":
                 Bots.randomBot(self)
             elif self.currentPlayer.difficulty == "Turtle":
                 Bots.TurtleBot(self)
             elif self.currentPlayer.difficulty == "Easy":
-                self.easyBot(self)
-
-
-
-
-
-
+                Bots.easyBot(self)

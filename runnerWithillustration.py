@@ -29,7 +29,7 @@ def translateToArray(board):
 
 
 while True:
-    val = game.randomBot()
+    val = game.bot()
     if game.phase == 5:
         data = translateToArray(game.map.board)
         img = Image.fromarray(data, 'RGB')
