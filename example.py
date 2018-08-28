@@ -55,10 +55,8 @@ while True:
             # Again here the AI should make a decision, if it should move or not.
             unit = game.moveable[0]
             pos = unit.getPosition()
-            possible = []
-            for tile in game.map.board[pos[0]][pos[1]].neighbours:
-                if tile.owner == game.currentPlayer:
-                    possible.append(tile)
+            possible = [tile for tile in game.map.board[pos[0]][pos[1]].neighbours if tile.owner == game.currentPlayer]
+
             if len(possible) != 0:
                 toTile = r.choice(possible)
                 game.moveUnit(game.map.board[pos[0]][pos[1]], toTile, 1, unit.__class__, unit)
