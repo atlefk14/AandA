@@ -76,7 +76,7 @@ def with_pauses():
 
 
 def without_pauses():
-    x, y = 8, 8
+    x, y = 2, 2
 
     Germany = Nations.Nation(name='Germany', human=False)
     Russia = Nations.Nation(name='Russia', human=False, difficulty="Easy")
@@ -89,9 +89,11 @@ def without_pauses():
     width, height = 1024, 768
     screen = pygame.display.set_mode((width, height))
     i = 0
+    import time
     while True:
         game.bot()
-        if i % 10:
+        if game.winnerwinnerchickendinner():
+            print(game.turn)
             screen.fill(0)
             data = translate_to_array(game.map.board, x, y, game)
             img = Image.fromarray(data, 'RGB')
@@ -99,6 +101,18 @@ def without_pauses():
             img = pygame.surfarray.make_surface(np.array(img))
             screen.blit(pygame.transform.rotate(img, 90), (0, 0))
             pygame.display.flip()
+            pygame.time.wait(10)
+            break
+
+        if i % 15 == 0:
+            screen.fill(0)
+            data = translate_to_array(game.map.board, x, y, game)
+            img = Image.fromarray(data, 'RGB')
+            img = img.resize((1024, 768))
+            img = pygame.surfarray.make_surface(np.array(img))
+            screen.blit(pygame.transform.rotate(img, 90), (0, 0))
+            pygame.display.flip()
+            pygame.time.wait(50)
         i+=1
 
 #with_pauses()
