@@ -1,40 +1,36 @@
-import Nations
-import Game
-
 import pygame
 import numpy as np
 from PIL import Image
 from pygame.locals import *
-import copy
+
+import Nations
+import Game
+
 
 def translate_to_array(board, x, y, game):
-    newBoard = np.zeros((x, y, 3), dtype=np.uint8)
-    globalMax = game.findGlobalMax()
+    new_board = np.zeros((x, y, 3), dtype=np.uint8)
+    global_max = game.find_global_max()
     for w in board:
-        row = []
         for h in w:
-            tileCords = h.cords[0]
             if h.owner.name == 'Germany':
-                newBoard[h.cords[0]][h.cords[1]] = np.asarray([0, 45 + int((80 * h.units.__len__()) / globalMax), 0],
-                                                              dtype=np.uint8)
+                new_board[h.cords[0]][h.cords[1]] = np.asarray([0, 45 + int((80 * h.units.__len__()) / global_max), 0],
+                                                               dtype=np.uint8)
             elif h.owner.name == 'Russia':
-                newBoard[h.cords[0]][h.cords[1]] = np.asarray([150 + (int(105 * h.units.__len__()) / globalMax), 0, 0],
-                                                              dtype=np.uint8)
+                new_board[h.cords[0]][h.cords[1]] = np.asarray(
+                    [150 + (int(105 * h.units.__len__()) / global_max), 0, 0],
+                    dtype=np.uint8)
 
-    return newBoard
+    return new_board
+
 
 def with_pauses():
     x, y = 8, 8
 
-
-    Germany = Nations.Nation(name='Germany', human=False)
-    Russia = Nations.Nation(name='Russia', human=False, difficulty="Easy")
-    nations = [Germany, Russia]
-    game = Game.Game(size=(x, y), nations=[Germany, Russia])
+    germany = Nations.Nation(name='Germany', human=False)
+    russia = Nations.Nation(name='Russia', human=False, difficulty="Easy")
+    game = Game.Game(size=(x, y), nations=[germany, russia])
 
     game_manager = Game.GameManager()
-
-
 
     pygame.init()
 
@@ -63,12 +59,11 @@ def with_pauses():
                             first = False
                         game.bot()
                         print(game.phase, game.turn)
-                        update =  True
+                        update = True
                         if game.phase == 0:
                             first = True
                             break
-
-                        elif game.winnerwinnerchickendinner():
+                        elif game.is_there_a_winner():
                             break
                 if event.key == K_BACKSPACE:
                     game = game_manager.go_back()
@@ -78,21 +73,20 @@ def with_pauses():
 def without_pauses():
     x, y = 2, 2
 
-    Germany = Nations.Nation(name='Germany', human=False)
-    Russia = Nations.Nation(name='Russia', human=False, difficulty="Easy")
+    germany = Nations.Nation(name='Germany', human=False)
+    russia = Nations.Nation(name='Russia', human=False, difficulty="Easy")
 
-    game = Game.Game(size=(x, y), nations=[Germany, Russia])
-
+    game = Game.Game(size=(x, y), nations=[germany, russia])
 
     pygame.init()
 
     width, height = 1024, 768
     screen = pygame.display.set_mode((width, height))
     i = 0
-    import time
+
     while True:
         game.bot()
-        if game.winnerwinnerchickendinner():
+        if game.is_there_a_winner():
             print(game.turn)
             screen.fill(0)
             data = translate_to_array(game.map.board, x, y, game)
@@ -113,7 +107,8 @@ def without_pauses():
             screen.blit(pygame.transform.rotate(img, 90), (0, 0))
             pygame.display.flip()
             pygame.time.wait(50)
-        i+=1
+        i += 1
 
-#with_pauses()
+
+# with_pauses()
 without_pauses()

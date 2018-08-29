@@ -20,6 +20,7 @@ class Tile(object):
     def __repr__(self):
         return self.owner.name+self.units.__str__()+self.constructions.__str__()
 
+
 class MapClass(object):
     def __init__(self, size, nations):
         ###Tuples, with height and width.
@@ -33,7 +34,7 @@ class MapClass(object):
 
     def createBoard(self):
         board = np.empty(self.size, dtype=Tile)
-        numOfPro = int((self.size[0]*self.size[1])/self.nations.__len__())
+        number_of_provinces = int((self.size[0]*self.size[1])/self.nations.__len__())
 
 
         #Creates the tiles.

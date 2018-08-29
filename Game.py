@@ -28,48 +28,48 @@ class Game():
     def __init__(self, size, nations):
         self.map = mapGen.MapClass(size, nations)
         self.nations = nations
-        self.startPlayer = nations[0]
-        self.currentPlayer = self.startPlayer
+        self.start_player = nations[0]
+        self.current_player = self.start_player
         self.terminal = False
         self.turn = 0
         self.phase = 0
         self.purchases = dict()
-        self.PCUs = None  # self.calculatePCUs()
-        self.deployablePlaces = None
-        self.borderTiles = self.calulateBorder()
-        self.startingConditions(n=2)
+        self.purchase_units = None  # self.calculate_purchase_units()
+        self.deployable_places = None
+        self.border_tiles = self.calculate_border()
+        self.starting_conditions(n=2)
         self.battles = []
-        self.moveable = self.moveableUnits()
-        self.recruitAbleList = [2, 5]
+        self.movable_units()
+        self.recruitable_list = [2, 5]
         self.history = []
 
-    def calulateBorder(self):
-        borderTiles = []
+    def calculate_border(self):
+        border_tiles = []
         for w in self.map.board:
             last = None
             for h in w:
                 if last is not None:
                     if h.owner != last.owner:
-                        borderTiles.append(last)
-                        borderTiles.append(h)
+                        border_tiles.append(last)
+                        border_tiles.append(h)
                 last = h
-        return borderTiles
+        return border_tiles
 
     def phase_0(self):
-        self.moveableUnits()
-        self.deployablePlaces = self.findDeployablePlaces()
-        self.nextPhase()
-        self.PCUs = self.calculatePCUs()
+        self.movable_units()
+        self.deployable_places = self.find_deployable_places()
+        self.next_phase()
+        self.purchase_units = self.calculate_purchase_units()
 
-    def startingConditions(self, n):
-        for tile in self.borderTiles:
+    def starting_conditions(self, n):
+        for tile in self.border_tiles:
             for i in range(n):
-                infUnit = Units.Infantry(owner=tile.owner)
-                tankUnit = Units.Tank(owner=tile.owner)
-                tile.units.append(infUnit)
-                tile.units.append(tankUnit)
-                tankUnit.setPosition(tile.cords)
-                infUnit.setPosition(tile.cords)
+                inf_unit = Units.Infantry(owner=tile.owner)
+                tank_unit = Units.Tank(owner=tile.owner)
+                tile.units.append(inf_unit)
+                tile.units.append(tank_unit)
+                tank_unit.set_position(tile.cords)
+                inf_unit.set_position(tile.cords)
 
         # All the way to the left
         tile = self.map.board[int(self.map.board.__len__() / 2) - 1][0]
@@ -82,152 +82,153 @@ class Game():
     def rotate(self, n=1):
         return self.nations[n:] + self.nations[:n]
 
-    def findDeployablePlaces(self):
-        deployablePlaces = []
+    def find_deployable_places(self):
+        deployable_places = []
         for w in self.map.board:
             for h in w:
-                if h.owner == self.currentPlayer:
+                if h.owner == self.current_player:
                     for const in h.constructions:
                         if isinstance(const, Buildings.Industry):
-                            deployablePlaces.append(h)
+                            deployable_places.append(h)
 
-        return deployablePlaces
+        return deployable_places
 
-    def validBoard(self):
+    def valid_board(self):
         for w in self.map.board:
             for h in w:
                 for unit in h.units:
                     if unit.owner != h.owner:
-                        return (False, h.cords)
-        return (True, -1)
+                        return False, h.cords
+        return True, -1
 
-    def calculatePCUs(self):
-        PCUs = 0
+    def calculate_purchase_units(self):
+        purchase_units = 0
         for w in self.map.board:
             for h in w:
-                if h.owner == self.currentPlayer:
-                    PCUs += h.value
-        return PCUs
+                if h.owner == self.current_player:
+                    purchase_units += h.value
+        return purchase_units
 
-    def nextTurn(self):
+    def next_turn(self):
         self.nations = self.rotate()
-        self.currentPlayer = self.nations[0]
-        if self.currentPlayer == self.startPlayer:
+        self.current_player = self.nations[0]
+        if self.current_player == self.start_player:
             self.turn += 1
         self.phase = 0
 
         return
 
-    def getTurn(self):
+    def get_turn(self):
         return self.turn
 
-    def nextPhase(self):
+    def next_phase(self):
         if self.phase == 5:
-            self.nextTurn()
+            self.next_turn()
         else:
             self.phase += 1
         return
 
-    def getPhase(self):
+    def get_phase(self):
 
         return self.phase
 
     def recruitable(self, n):
         rtr = []
-        for pos in self.recruitAbleList:
+        for pos in self.recruitable_list:
             if pos < n:
                 rtr.append(pos)
         return rtr
 
-    def recruitUnit(self, n):
+    def recruit_unit(self, n):
         if n == 0:
-            unit = Units.Infantry(self.currentPlayer)
+            unit = Units.Infantry(self.current_player)
         elif n == 1:
-            unit = Units.Tank(self.currentPlayer)
+            unit = Units.Tank(self.current_player)
 
-        if self.currentPlayer not in self.purchases:
-            self.purchases[self.currentPlayer] = []
-        self.purchases[self.currentPlayer].append(unit)
+        if self.current_player not in self.purchases:
+            self.purchases[self.current_player] = []
 
-    def initTurn(self):
-        self.deployablePlaces = self.calculatePCUs()
-        self.PCUs = self.calculatePCUs()
+        self.purchases[self.current_player].append(unit)
+
+    def init_turn(self):
+        self.deployable_places = self.calculate_purchase_units()
+        self.purchase_units = self.calculate_purchase_units()
         self.battles = []
 
-    def conquerTile(self, tile, newOwner):
-        tile.owner = newOwner
+    def conquer_tile(self, tile, new_owner):
+        tile.owner = new_owner
 
-    def moveUnit(self, fromTile, toTile, n, type, unit):
+    def move_unit(self, from_tile, to_tile, n, type_class, unit):
         c = 0
         d = 0
         while True:
             if d == n:
                 break
             c += 1
-            if isinstance(unit, type):
-                deltaX = abs(fromTile.cords[0] - toTile.cords[0])
-                deltaY = abs(fromTile.cords[1] - toTile.cords[1])
+            if isinstance(unit, type_class):
+                delta_x = abs(from_tile.cords[0] - to_tile.cords[0])
+                delta_y = abs(from_tile.cords[1] - to_tile.cords[1])
 
                 # todo add is legal function instead.
-                if deltaX + deltaY <= unit.range:
-                    if toTile.owner != self.currentPlayer:
-                        if unit.usedSteps == 0:
-                            unit.setStep(unit.range)
+                if delta_x + delta_y <= unit.range:
+                    if to_tile.owner != self.current_player:
+                        if unit.used_steps == 0:
+                            unit.set_step(unit.range)
                         else:
-                            unit.setStep(deltaX + deltaY)
+                            unit.set_step(delta_x + delta_y)
 
-                        if toTile.units.__len__() == 0:
-                            self.conquerTile(toTile, self.currentPlayer)
-                        elif not self.battles.__contains__(toTile.cords):
-                            self.battles.append(toTile.cords)
+                        if to_tile.units.__len__() == 0:
+                            self.conquer_tile(to_tile, self.current_player)
+                        elif not self.battles.__contains__(to_tile.cords):
+                            self.battles.append(to_tile.cords)
                     else:
-                        unit.setStep(deltaY + deltaX)
+                        unit.set_step(delta_y + delta_x)
 
-                    unit.setPosition(toTile.cords)
-                    unit.setOldPosition(fromTile.cords)
-                    if unit.usedSteps == unit.range:
+                    unit.set_position(to_tile.cords)
+                    unit.set_old_position(from_tile.cords)
+                    if unit.used_steps == unit.range:
                         try:
-                            self.moveable.remove(unit)
+                            self.movable.remove(unit)
                         except ValueError:
                             print(ValueError.args)
 
-                    toTile.units.append(unit)
-                    fromTile.units.remove(unit)
-                    if self.battles.__contains__(fromTile.cords):
+                    to_tile.units.append(unit)
+                    from_tile.units.remove(unit)
+                    if self.battles.__contains__(from_tile.cords):
                         valid = False
-                        for unit in fromTile.units:
-                            if unit.owner == self.currentPlayer:
+                        for unit in from_tile.units:
+                            if unit.owner == self.current_player:
                                 valid = True
                                 break
                         if not valid:
-                            self.battles.remove(fromTile.cords)
+                            self.battles.remove(from_tile.cords)
                     d += 1
                     c -= 1
 
-    def resetAllUnits(self):
+    def reset_all_units(self):
         for h in self.map.board:
             for w in h:
                 for unit in w.units:
                     unit.reset()
 
-    def findGlobalMax(self):
-        maxUnit = 0
+    def find_global_max(self):
+        max_unit = 0
         for w in self.map.board:
             for h in w:
                 length = h.units.__len__()
-                if length > maxUnit:
-                    maxUnit = length
+                if length > max_unit:
+                    max_unit = length
 
-        return maxUnit
+        return max_unit
 
-    def getDice(self, n=6):
+    def get_dice(self, n=6):
         return r.randint(1, n)
 
-    def doBattle(self, cords):
+    def do_battle(self, cords):
         attacking = dict()
         defending = dict()
         for unit in self.map.board[cords[0]][cords[1]].units:
-            if unit.owner == self.currentPlayer and self.map.board[cords[0]][cords[1]].owner != self.currentPlayer:
+            if unit.owner == self.current_player and self.map.board[cords[0]][cords[1]].owner != self.current_player:
                 if unit.type not in attacking:
                     attacking[unit.type] = []
                 attacking[unit.type].append(unit)
@@ -235,105 +236,103 @@ class Game():
                 if unit.type not in defending:
                     defending[unit.type] = []
                 defending[unit.type].append(unit)
-        aHits = 0
+        a_hits = 0
         for key in attacking:
             for unit in attacking[key]:
-                dice = self.getDice()
+                dice = self.get_dice()
                 # print(unit)
-                if dice <= unit.attSuccess:
-                    aHits += 1
-        dHits = 0
+                if dice <= unit.att_success:
+                    a_hits += 1
+        d_hits = 0
         for key in defending:
             for unit in defending[key]:
-                dice = self.getDice()
-                if dice <= unit.defSuccess:
-                    dHits += 1
+                dice = self.get_dice()
+                if dice <= unit.def_success:
+                    d_hits += 1
 
-        return (attacking, dHits), (defending, aHits)
+        return (attacking, d_hits), (defending, a_hits)
 
-    def calculateIndivualUnits(self):
-        dictOfNations = dict()
+    def calculate_individual_units(self):
+        dict_of_nations = dict()
         for nation in self.nations:
             total = 0
             for w in self.map.board:
                 for h in w:
                     if h.owner == nation:
                         total += h.units.__len__()
-            dictOfNations[nation] = total
+            dict_of_nations[nation] = total
 
-        return dictOfNations
+        return dict_of_nations
 
-    def calculateUnits(self):
+    def calculate_units(self):
         total = 0
         for w in self.map.board:
             for h in w:
                 total += h.units.__len__()
         return total
 
-    def deleteUnit(self, units):
+    def delete_unit(self, units):
         for unit in units:
-            cords = unit.getPosition()
+            cords = unit.get_position()
             tile = self.map.board[cords[0]][cords[1]]
             tile.units.remove(unit)
-            if unit in self.moveable:
-                self.moveable.remove(unit)
+            if unit in self.movable:
+                self.movable.remove(unit)
         return True
 
-    def moveableUnits(self):
-        moveable = []
+    def movable_units(self):
+        movable = []
         for h in self.map.board:
             for w in h:
                 for unit in w.units:
-                    if unit.owner == self.currentPlayer:
-                        if unit.usedSteps != unit.range:
-                            moveable.append(unit)
+                    if unit.owner == self.current_player:
+                        if unit.used_steps != unit.range:
+                            movable.append(unit)
+        self.movable = movable
 
-        self.moveable = moveable
-
-    def takeCasualties(self, units, choice, n):
-        toBeDeleted = []
+    def take_casualties(self, units, choice, n):
+        to_be_deleted = []
         c = 0
         if choice == 'All':
             for key in units:
-                toBeDeleted += units[key]
+                to_be_deleted += units[key]
         else:
             for unit in units[choice]:
                 if c == n:
                     break
-                toBeDeleted.append(unit)
+                to_be_deleted.append(unit)
                 c += 1
 
-        self.deleteUnit(toBeDeleted)
+        self.delete_unit(to_be_deleted)
 
-    def winnerwinnerchickendinner(self):
+    def is_there_a_winner(self):
         winner = True
         for w in self.map.board:
             for h in w:
-                if h.owner != self.currentPlayer:
+                if h.owner != self.current_player:
                     winner = False
         return winner
 
-    def findMovableInTile(self, cords):
+    def find_movable_in_tile(self, cords):
         units = []
         for unit in self.map.board[cords[0]][cords[1]].units:
-            if unit.usedSteps > unit.range:
+            if unit.used_steps > unit.range:
                 units.append(unit)
         return units
 
-    def findUnitCount(self, units):
+    def find_unit_count(self, units):
         c = 0
         for key in units:
             for unit in units[key]:
                 c += 1
-
         return c
 
     def bot(self):
         import Bots
-        if not self.currentPlayer.human:
-            if self.currentPlayer.difficulty == "Random":
-                Bots.randomBot(self)
-            elif self.currentPlayer.difficulty == "Turtle":
-                Bots.TurtleBot(self)
-            elif self.currentPlayer.difficulty == "Easy":
-                Bots.easyBot(self)
+        if not self.current_player.human:
+            if self.current_player.difficulty == "Random":
+                Bots.random_bot(self)
+            elif self.current_player.difficulty == "Turtle":
+                Bots.turtle_bot(self)
+            elif self.current_player.difficulty == "Easy":
+                Bots.easy_bot(self)
